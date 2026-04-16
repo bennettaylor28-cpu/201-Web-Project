@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link href="css/styles.css" rel="stylesheet" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blossom Word</title>
+  <style>
+    :root {
+      --sage-1: #e6efe6;
+      --sage-2: #cedfcc;
+      --sage-3: #9db6a5;
+      --sage-4: #6f8d77;
+      --blue-1: #eef7ff;
+      --blue-2: #d5e8f7;
+      --blue-3: #9ec4df;
+      --blue-4: #5d88a7;
+      --cloud: rgba(255,255,255,0.88);
+      --panel: rgba(255,255,255,0.62);
+      --panel-strong: rgba(255,255,255,0.78);
+      --text: #27414e;
+      --muted: #5d707a;
+      --tile-empty: rgba(255,255,255,0.65);
+      --tile-border: #b8cad4;
+      --tile-text: #1f3642;
+      --absent: #8a959d;
+      --present: #d4b24f;
+      --correct: #70a96e;
+      --key-bg: rgba(255,255,255,0.72);
+      --shadow: 0 14px 30px rgba(58, 89, 102, 0.16);
+      --radius: 24px;
+      --transition: 180ms ease;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 20%, rgba(255,255,255,0.5), transparent 16%),
+        radial-gradient(circle at 85% 12%, rgba(255,255,255,0.4), transparent 16%),
+        linear-gradient(180deg, #dfeef7 0%, #d7e8ee 26%, #dceadf 56%, #d4e5d4 100%);
+      overflow-x: hidden;
+    }
+
+    .sky, .garden {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .cloud {
+      position: absolute;
+      background: var(--cloud);
+      border-radius: 999px;
+      filter: blur(0.2px);
+      box-shadow:
+        35px 8px 0 8px var(--cloud),
+        78px -10px 0 16px var(--cloud),
+        128px 3px 0 10px var(--cloud),
+        20px -18px 0 0 var(--cloud);
+      opacity: 0.85;
+      animation: drift linear infinite;
+    }
+
+    .cloud.one { width: 120px; height: 42px; top: 9%; left: -15%; animation-duration: 52s; }
+    .cloud.two { width: 140px; height: 46px; top: 20%; left: -20%; animation-duration: 67s; animation-delay: -14s; }
+    .cloud.three { width: 98px; height: 36px; top: 12%; left: -10%; animation-duration: 74s; animation-delay: -28s; }
+
+    @keyframes drift {
+      from { transform: translateX(0); }
+      to { transform: translateX(135vw); }
+    }
+
+    .flower-cluster {
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      opacity: 0.75;
+    }
+
+    .flower {
+      position: absolute;
+      width: 62px;
+      height: 62px;
+      animation: bob 6s ease-in-out infinite;
+    }
+
+    .flower::before,
+    .flower::after,
+    .flower span::before,
+    .flower span::after {
+      content: "";
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--petal, #fff);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.45);
+    }
+
+    .flower::before { top: 0; left: 17px; }
+    .flower::after { bottom: 0; left: 17px; }
+    .flower span::before { left: 0; top: 17px; }
+    .flower span::after { right: 0; top: 17px; }
+
+    .flower i {
+      position: absolute;
+      inset: 22px;
+      border-radius: 50%;
+      background: #f4e4a5;
+      box-shadow: 0 0 0 6px rgba(255,255,255,0.22);
+    }
+
+    .flower.blue { --petal: #c8e2f8; }
+    .flower.white { --petal: #ffffff; }
+    .flower.green { --petal: #d8ecd3; }
+
+    .cluster-a { left: -20px; bottom: -8px; }
+    .cluster-b { right: -10px; top: 70px; transform: scale(1.05); }
+    .cluster-c { left: 2%; top: 58%; transform: scale(0.82); opacity: 0.5; }
+
+    .cluster-a .flower:nth-child(1) { left: 12px; bottom: 26px; }
+    .cluster-a .flower:nth-child(2) { left: 60px; bottom: 76px; animation-delay: -1s; }
+    .cluster-a .flower:nth-child(3) { left: 108px; bottom: 28px; animation-delay: -2.4s; }
+
+    .cluster-b .flower:nth-child(1) { right: 16px; top: 10px; }
+    .cluster-b .flower:nth-child(2) { right: 86px; top: 54px; animation-delay: -1.6s; }
+    .cluster-b .flower:nth-child(3) { right: 24px; top: 100px; animation-delay: -0.8s; }
+
+    .cluster-c .flower:nth-child(1) { left: 0; top: 0; }
+    .cluster-c .flower:nth-child(2) { left: 68px; top: 24px; animation-delay: -1.3s; }
+
+    @keyframes bob {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-5px); }
+    }
+
+    .wrap {
+      position: relative;
+      min-height: 100%;
+      display: grid;
+      place-items: center;
+      padding: 26px 18px 40px;
+    }
+
+    .app {
+      position: relative;
+      width: min(100%, 920px);
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,0.5);
+      border-radius: 34px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      padding: 24px 20px 24px;
+      overflow: hidden;
+    }
+
+    .header {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 16px;
+      padding-right: 190px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 3rem);
+      letter-spacing: 0.04em;
+      line-height: 1;
+    }
+
+    .subtitle {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+      max-width: 520px;
+    }
+
+    .legend {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      width: 170px;
+      background: var(--key-bg);
+      border: 1px solid rgba(255,255,255,0.7);
+      border-radius: 18px;
+      padding: 12px;
+      box-shadow: 0 10px 20px rgba(75, 99, 122, 0.1);
+      z-index: 3;
+    }
+
+    .legend h2 {
+      margin: 0 0 10px;
+      font-size: 0.92rem;
+      letter-spacing: 0.03em;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 0.82rem;
+      color: var(--text);
+      margin-top: 8px;
+      line-height: 1.2;
+    }
+
+    .swatch {
+      width: 22px;
+      height: 22px;
+      border-radius: 7px;
+      border: 1px solid rgba(255,255,255,0.6);
+      flex: 0 0 auto;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      justify-items: center;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .message {
+      min-height: 24px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-align: center;
+      color: var(--blue-4);
+    }
+
+    .message.error { color: #a55361; }
+    .message.success { color: #4f8760; }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 16px;
+      cursor: pointer;
+      font: inherit;
+      color: white;
+      background: linear-gradient(180deg, var(--blue-4), #4f7896);
+      box-shadow: 0 8px 16px rgba(68, 99, 122, 0.18);
+      transition: transform var(--transition), opacity var(--transition), box-shadow var(--transition);
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(1px); }
+
+    .board {
+      display: grid;
+      grid-template-rows: repeat(6, 1fr);
+      gap: 8px;
+      padding: 8px;
+      background: rgba(255,255,255,0.28);
+      border-radius: 24px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.45);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+
+    .tile {
+      width: clamp(52px, 12vw, 66px);
+      height: clamp(52px, 12vw, 66px);
+      border-radius: 18px;
+      border: 2px solid var(--tile-border);
+      background: var(--tile-empty);
+      display: grid;
+      place-items: center;
+      text-transform: uppercase;
+      font-size: clamp(1.35rem, 4.8vw, 1.8rem);
+      font-weight: 800;
+      color: var(--tile-text);
+      user-select: none;
+      transition: border-color var(--transition), background var(--transition), transform var(--transition);
+      transform-style: preserve-3d;
+    }
+
+    .tile.filled { border-color: #8eaabd; }
+    .tile.reveal-correct { background: var(--correct); border-color: var(--correct); color: white; }
+    .tile.reveal-present { background: var(--present); border-color: var(--present); color: white; }
+    .tile.reveal-absent { background: var(--absent); border-color: var(--absent); color: white; }
+    .tile.pop { animation: pop 120ms ease; }
+    .tile.flip { animation: flip 520ms ease; }
+
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes flip {
+      0% { transform: rotateX(0deg); }
+      45% { transform: rotateX(90deg); }
+      55% { transform: rotateX(90deg); }
+      100% { transform: rotateX(0deg); }
+    }
+
+    .shake { animation: shake 300ms linear; }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+
+    .keyboard {
+      width: min(100%, 640px);
+      display: grid;
+      gap: 8px;
+    }
+
+    .kb-row {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .key {
+      min-width: 42px;
+      height: 54px;
+      padding: 0 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.72);
+      color: var(--text);
+      box-shadow: none;
+      font-weight: 700;
+    }
+
+    .key.wide { min-width: 72px; font-size: 0.9rem; }
+    .key.correct { background: var(--correct); color: white; }
+    .key.present { background: var(--present); color: white; }
+    .key.absent { background: var(--absent); color: white; }
+
+    .stats {
+      font-size: 0.9rem;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      background: rgba(48, 73, 85, 0.24);
+      padding: 18px;
+      z-index: 10;
+    }
+
+    .modal-backdrop.show { display: grid; }
+
+    .modal {
+      width: min(100%, 460px);
+      background: var(--panel-strong);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 20px;
+      border: 1px solid rgba(255,255,255,0.6);
+    }
+
+    .modal h3 { margin: 0 0 10px; font-size: 1.25rem; }
+    .modal p { margin: 8px 0; color: var(--text); }
+    .modal .small { color: var(--muted); font-size: 0.92rem; }
+    .modal .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+
+    .footer-note {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-top: 2px;
+    }
+
+    @media (max-width: 760px) {
+      .app { padding-top: 16px; }
+      .header {
+        padding-right: 0;
+        margin-bottom: 10px;
+      }
+      .legend {
+        position: static;
+        width: min(100%, 420px);
+        margin: 4px auto 6px;
+      }
+      .header { display: block; }
+      .subtitle { max-width: none; }
+    }
+
+    @media (max-width: 520px) {
+      .wrap { padding: 12px 10px 28px; }
+      .app { border-radius: 24px; padding: 14px 10px 20px; }
+      .board { gap: 6px; padding: 6px; }
+      .row { gap: 6px; }
+      .key { min-width: 30px; height: 48px; padding: 0 9px; border-radius: 12px; font-size: 0.92rem; }
+      .key.wide { min-width: 56px; font-size: 0.8rem; }
+      .cluster-c { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top" id="sideNav">
+            <a class="navbar-brand js-scroll-trigger" href="#page-top">
+                <span class="d-block d-lg-none">Clarence Taylor</span>
+                <span class="d-none d-lg-block"><img class="img-fluid img-profile rounded-circle mx-auto mb-2" src="assets/img/taylor.webp" alt="..." /></span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navbarResponsive">
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a class="nav-link js-scroll-trigger" href="index.html#about">About</a></li>
+                    <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#education">Education</a></li>
+                    <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#experience">Experience</a></li>
+                
+                    <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#skills">Skills</a></li>
+                    <li class="nav-item"><a class="nav-link js-scroll-trigger" href="#interests">Interests</a></li>
+                    <li class="nav-item"><a class="nav-link js-scroll-trigger" href="game.html">Game</a></li>
+                    <li class="nav-item"><a class="nav-link js-scroll-trigger" href="scratchpage.html">Scratch</a></li>
+                </ul>
+            </div>
+        </nav>
+  <div class="sky" aria-hidden="true">
+    <div class="cloud one"></div>
+    <div class="cloud two"></div>
+    <div class="cloud three"></div>
+  </div>
+
+  <div class="garden" aria-hidden="true">
+    <div class="flower-cluster cluster-a">
+      <div class="flower blue"><span></span><i></i></div>
+      <div class="flower white"><span></span><i></i></div>
+      <div class="flower green"><span></span><i></i></div>
+    </div>
+    <div class="flower-cluster cluster-b">
+      <div class="flower white"><span></span><i></i></div>
+      <div class="flower blue"><span></span><i></i></div>
+      <div class="flower green"><span></span><i></i></div>
+    </div>
+    <div class="flower-cluster cluster-c">
+      <div class="flower green"><span></span><i></i></div>
+      <div class="flower blue"><span></span><i></i></div>
+    </div>
+  </div>
+
+  <main class="wrap">
+    <section class="app">
+      <aside class="legend" aria-label="Color guide">
+        <h2>Color Key</h2>
+        <div class="legend-item"><span class="swatch" style="background: var(--correct)"></span><span>Green = right letter, right spot</span></div>
+        <div class="legend-item"><span class="swatch" style="background: var(--present)"></span><span>Gold = in the word, wrong spot</span></div>
+        <div class="legend-item"><span class="swatch" style="background: var(--absent)"></span><span>Gray = not in the word</span></div>
+      </aside>
+
+      <header class="header">
+        <div>
+          <h1>Blossom Word</h1>
+          <p class="subtitle">A floral sky Wordle-style game with one five-letter word, six guesses, daily progress saving, and a random replay mode.</p>
+        </div>
+      </header>
+
+      <div class="shell">
+        <div class="topbar">
+          <div class="message" id="message" aria-live="polite"></div>
+          <div class="controls">
+            <button id="newRandomBtn" type="button">Random Puzzle</button>
+            <button id="howToBtn" type="button">How to Play</button>
+          </div>
+        </div>
+
+        <div id="board" class="board" aria-label="Guess board"></div>
+        <div id="keyboard" class="keyboard" aria-label="On-screen keyboard"></div>
+        <div id="stats" class="stats"></div>
+        <div class="footer-note">Type on your keyboard or tap the buttons below.</div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal">
+      <h3 id="modalTitle">How to Play</h3>
+      <p>Guess the hidden five-letter word in six tries.</p>
+      <p>After each guess, the tiles flip to show how close you are.</p>
+      <p class="small">Green means the letter is in the right place. Gold means the letter is in the word but in a different spot. Gray means the letter is not in the word.</p>
+      <div class="actions">
+        <button id="closeModalBtn" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const WORD_LENGTH = 5;
+    const MAX_GUESSES = 6;
+    const EPOCH = '2024-01-01';
+    const STORAGE_PREFIX = 'blossom-word';
+    const solutionWords = [
+      'apple','beach','bloom','brave','cabin','candy','cedar','charm','chase','cloud','coast','coral','crane','cream','daisy','dance','dream','drift','eager','earth','fable','fairy','flame','flora','flour','frame','fresh','frost','glade','glory','grace','grape','grass','green','grove','happy','hazel','heart','honey','ivory','jolly','lemon','lilac','lotus','lucky','magic','maple','meadow','minty','mirth','mocha','mossy','ocean','olive','pearl','petal','piano','pilot','plume','poppy','pride','queen','quiet','rainy','raven','river','robin','roses','sable','satin','scale','shore','skies','smile','snows','solar','sound','spark','spice','sprig','stone','sunny','swany','sweet','tulip','umber','valley','veldt','vivid','whale','wheat','winds','woven','youth'
+    ];
+
+    const allowedExtras = [
+      'about','above','adapt','adore','after','agent','aglow','agree','aisle','alarm','album','alert','alike','alive','alone','angel','ankle','arbor','arena','argue','arise','armor','aroma','array','asset','atlas','audio','award','baker','balmy','basic','basil','begin','being','berry','birch','black','bland','bless','blimp','bliss','board','bonus','boost','bound','brain','brand','bread','brick','bride','bring','broad','brown','brush','buddy','cable','camel','canal','carry','carve','cause','chalk','cheer','chess','chime','cider','clasp','clean','clear','climb','clink','cloak','close','clove','clown','clued','clump','cocoa','color','comet','couch','could','count','cover','coven','cower','crown','curve','demon','deter','diner','dodge','doing','donor','doubt','dozen','draft','drama','dress','drink','drove','eclat','elect','elite','ember','enjoy','enter','equal','equip','ether','evade','event','every','exact','exist','extra','faith','fancy','feast','feign','field','fiery','final','first','fjord','float','focus','force','forge','forth','found','giant','given','glass','gleam','glide','gloom','glyph','grasp','great','greet','grind','guard','guest','guide','habit','halve','haven','hinge','ideal','image','index','inner','input','joint','judge','knack','known','label','labor','laser','later','layer','learn','light','linen','liver','lodge','lunar','maker','march','metal','meter','micro','might','mimic','minor','model','money','month','motor','mount','movie','music','never','noble','north','novel','nurse','onion','opera','orbit','order','other','outer','paint','panel','party','pause','peace','phase','phone','piece','place','plain','plane','plant','plate','pleat','point','porch','power','press','price','prime','print','prize','proud','prove','quick','radar','raise','ratio','reach','ready','relay','renew','reply','rhyme','ridge','right','risky','rough','round','route','royal','ruler','salon','scarf','scene','scope','score','serve','shape','sheep','shelf','shine','shiny','sight','since','skill','sleep','slope','small','smart','smoke','solid','solve','south','space','spare','speak','spell','spend','spoke','sport','stack','stage','stare','start','state','steam','steel','steep','still','store','storm','story','study','style','sugar','table','taste','teach','thank','their','there','thorn','those','three','throw','tiger','today','token','tonic','topic','torch','touch','tough','tower','track','trade','trail','train','treat','trend','trial','tribe','trick','truly','trust','truth','uncle','under','union','unity','until','upper','upset','urban','usage','usual','vapor','verse','video','vigor','vital','vocal','voice','watch','water','weary','weave','whirl','white','whole','woman','world','worry','wrist','write','wrong','xenon','yield','young','zebra'
+    ];
+
+    const allowedWords = new Set([...solutionWords, ...allowedExtras]);
+    const keyboardRows = ['QWERTYUIOP', 'ASDFGHJKL', 'ENTERZXCVBNM⌫'];
+    const state = {
+      board: Array.from({ length: MAX_GUESSES }, () => Array(WORD_LENGTH).fill('')),
+      evaluations: Array.from({ length: MAX_GUESSES }, () => Array(WORD_LENGTH).fill('')),
+      currentRow: 0,
+      currentCol: 0,
+      gameOver: false,
+      answer: '',
+      mode: 'daily',
+      puzzleKey: '',
+      keyboardState: {},
+      stats: {
+        played: 0,
+        wins: 0,
+        streak: 0,
+        bestStreak: 0,
+        distribution: [0,0,0,0,0,0]
+      }
+    };
+
+    const boardEl = document.getElementById('board');
+    const keyboardEl = document.getElementById('keyboard');
+    const messageEl = document.getElementById('message');
+    const statsEl = document.getElementById('stats');
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    const howToBtn = document.getElementById('howToBtn');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const newRandomBtn = document.getElementById('newRandomBtn');
+
+    function buildBoard() {
+      boardEl.innerHTML = '';
+      for (let r = 0; r < MAX_GUESSES; r++) {
+        const row = document.createElement('div');
+        row.className = 'row';
+        row.dataset.row = r;
+        for (let c = 0; c < WORD_LENGTH; c++) {
+          const tile = document.createElement('div');
+          tile.className = 'tile';
+          tile.id = `tile-${r}-${c}`;
+          tile.setAttribute('aria-label', `Row ${r+1} Column ${c+1}`);
+          row.appendChild(tile);
+        }
+        boardEl.appendChild(row);
+      }
+    }
+
+    function buildKeyboard() {
+      keyboardEl.innerHTML = '';
+      keyboardRows.forEach(rowString => {
+        const row = document.createElement('div');
+        row.className = 'kb-row';
+        const tokens = rowString === 'ENTERZXCVBNM⌫'
+          ? ['ENTER','Z','X','C','V','B','N','M','⌫']
+          : rowString.split('');
+        tokens.forEach(token => {
+          const key = document.createElement('button');
+          key.className = 'key';
+          if (token === 'ENTER' || token === '⌫') key.classList.add('wide');
+          key.type = 'button';
+          key.dataset.key = token;
+          key.textContent = token === '⌫' ? 'Back' : token;
+          key.setAttribute('aria-label', token === '⌫' ? 'Backspace' : token);
+          key.addEventListener('click', () => handleKey(token));
+          row.appendChild(key);
+        });
+        keyboardEl.appendChild(row);
+      });
+    }
+
+    function getTodayKey() {
+      const now = new Date();
+      return now.toISOString().slice(0,10);
+    }
+
+    function getDailyAnswer(dateString) {
+      const start = new Date(EPOCH + 'T00:00:00');
+      const current = new Date(dateString + 'T00:00:00');
+      const diffDays = Math.floor((current - start) / (1000 * 60 * 60 * 24));
+      const index = ((diffDays % solutionWords.length) + solutionWords.length) % solutionWords.length;
+      return solutionWords[index];
+    }
+
+    function getRandomAnswer() {
+      const index = Math.floor(Math.random() * solutionWords.length);
+      return solutionWords[index];
+    }
+
+    function saveStats() {
+      localStorage.setItem(`${STORAGE_PREFIX}-stats`, JSON.stringify(state.stats));
+    }
+
+    function loadStats() {
+      const raw = localStorage.getItem(`${STORAGE_PREFIX}-stats`);
+      if (!raw) return;
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') state.stats = { ...state.stats, ...parsed };
+      } catch {}
+    }
+
+    function saveGame() {
+      const payload = {
+        board: state.board,
+        evaluations: state.evaluations,
+        currentRow: state.currentRow,
+        currentCol: state.currentCol,
+        gameOver: state.gameOver,
+        answer: state.answer,
+        mode: state.mode,
+        puzzleKey: state.puzzleKey,
+        keyboardState: state.keyboardState
+      };
+      localStorage.setItem(`${STORAGE_PREFIX}-game-${state.puzzleKey}`, JSON.stringify(payload));
+    }
+
+    function loadGame(puzzleKey) {
+      const raw = localStorage.getItem(`${STORAGE_PREFIX}-game-${puzzleKey}`);
+      if (!raw) return false;
+      try {
+        const saved = JSON.parse(raw);
+        if (!saved || saved.puzzleKey !== puzzleKey) return false;
+        Object.assign(state, saved);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    function resetState(mode, answer, puzzleKey) {
+      state.board = Array.from({ length: MAX_GUESSES }, () => Array(WORD_LENGTH).fill(''));
+      state.evaluations = Array.from({ length: MAX_GUESSES }, () => Array(WORD_LENGTH).fill(''));
+      state.currentRow = 0;
+      state.currentCol = 0;
+      state.gameOver = false;
+      state.answer = answer;
+      state.mode = mode;
+      state.puzzleKey = puzzleKey;
+      state.keyboardState = {};
+    }
+
+    function startDailyGame() {
+      const key = `daily-${getTodayKey()}`;
+      const restored = loadGame(key);
+      if (!restored) {
+        resetState('daily', getDailyAnswer(getTodayKey()), key);
+        saveGame();
+      }
+      renderAll();
+      setMessage('Daily puzzle ready.', '');
+    }
+
+    function startRandomGame() {
+      const randomKey = `random-${Date.now()}`;
+      resetState('random', getRandomAnswer(), randomKey);
+      renderAll();
+      saveGame();
+      setMessage('Fresh random puzzle started.', '');
+    }
+
+    function renderAll() {
+      buildBoard();
+      buildKeyboard();
+      for (let r = 0; r < MAX_GUESSES; r++) {
+        for (let c = 0; c < WORD_LENGTH; c++) {
+          const letter = state.board[r][c];
+          const evaluation = state.evaluations[r][c];
+          updateTile(r, c, letter, evaluation, false);
+        }
+      }
+      updateKeyboardView();
+      renderStats();
+    }
+
+    function updateTile(r, c, letter, evaluation, animatePop = false) {
+      const tile = document.getElementById(`tile-${r}-${c}`);
+      if (!tile) return;
+      tile.textContent = letter;
+      tile.classList.remove('filled', 'reveal-correct', 'reveal-present', 'reveal-absent', 'pop');
+      if (letter) tile.classList.add('filled');
+      if (evaluation) tile.classList.add(`reveal-${evaluation}`);
+      if (animatePop) {
+        tile.classList.add('pop');
+        setTimeout(() => tile.classList.remove('pop'), 140);
+      }
+    }
+
+    function setMessage(text, type = '') {
+      messageEl.textContent = text;
+      messageEl.className = `message ${type}`.trim();
+    }
+
+    function handleKey(key) {
+      if (state.gameOver) return;
+      if (/^[A-Z]$/.test(key)) addLetter(key);
+      else if (key === '⌫' || key === 'BACKSPACE') removeLetter();
+      else if (key === 'ENTER') submitGuess();
+    }
+
+    function addLetter(letter) {
+      if (state.currentCol >= WORD_LENGTH || state.currentRow >= MAX_GUESSES) return;
+      state.board[state.currentRow][state.currentCol] = letter.toLowerCase();
+      updateTile(state.currentRow, state.currentCol, letter, '', true);
+      state.currentCol += 1;
+      saveGame();
+    }
+
+    function removeLetter() {
+      if (state.currentCol === 0) return;
+      state.currentCol -= 1;
+      state.board[state.currentRow][state.currentCol] = '';
+      updateTile(state.currentRow, state.currentCol, '', '', false);
+      saveGame();
+    }
+
+    function shakeRow(rowIndex) {
+      const row = document.querySelector(`.row[data-row="${rowIndex}"]`);
+      if (!row) return;
+      row.classList.add('shake');
+      setTimeout(() => row.classList.remove('shake'), 320);
+    }
+
+    function submitGuess() {
+      if (state.currentCol < WORD_LENGTH) {
+        setMessage('Not enough letters.', 'error');
+        shakeRow(state.currentRow);
+        return;
+      }
+      const guess = state.board[state.currentRow].join('');
+      if (!allowedWords.has(guess)) {
+        setMessage('That word is not in the list.', 'error');
+        shakeRow(state.currentRow);
+        return;
+      }
+      const evaluation = evaluateGuess(guess, state.answer);
+      state.evaluations[state.currentRow] = evaluation;
+      revealRow(state.currentRow, evaluation);
+    }
+
+    function evaluateGuess(guess, answer) {
+      const result = Array(WORD_LENGTH).fill('absent');
+      const answerChars = answer.split('');
+      const guessChars = guess.split('');
+      const remaining = {};
+
+      for (let i = 0; i < WORD_LENGTH; i++) {
+        if (guessChars[i] === answerChars[i]) {
+          result[i] = 'correct';
+        } else {
+          remaining[answerChars[i]] = (remaining[answerChars[i]] || 0) + 1;
+        }
+      }
+
+      for (let i = 0; i < WORD_LENGTH; i++) {
+        if (result[i] === 'correct') continue;
+        const ch = guessChars[i];
+        if (remaining[ch] > 0) {
+          result[i] = 'present';
+          remaining[ch] -= 1;
+        }
+      }
+      return result;
+    }
+
+    function revealRow(rowIndex, evaluation) {
+      const letters = state.board[rowIndex];
+      letters.forEach((letter, col) => {
+        const tile = document.getElementById(`tile-${rowIndex}-${col}`);
+        setTimeout(() => {
+          tile.classList.add('flip');
+          updateTile(rowIndex, col, letter.toUpperCase(), evaluation[col], false);
+          setTimeout(() => tile.classList.remove('flip'), 540);
+        }, col * 260);
+      });
+
+      setTimeout(() => {
+        updateKeyboardState(letters, evaluation);
+        const guess = letters.join('');
+        if (guess === state.answer) {
+          endGame(true);
+          return;
+        }
+        state.currentRow += 1;
+        state.currentCol = 0;
+        if (state.currentRow >= MAX_GUESSES) {
+          endGame(false);
+        } else {
+          setMessage('Keep going.', '');
+        }
+        saveGame();
+      }, 1450);
+    }
+
+    function updateKeyboardState(letters, evaluation) {
+      const priority = { absent: 1, present: 2, correct: 3 };
+      letters.forEach((letter, i) => {
+        const current = state.keyboardState[letter] || '';
+        const next = evaluation[i];
+        if (!current || priority[next] > priority[current]) {
+          state.keyboardState[letter] = next;
+        }
+      });
+      updateKeyboardView();
+    }
+
+    function updateKeyboardView() {
+      document.querySelectorAll('.key').forEach(key => {
+        key.classList.remove('correct', 'present', 'absent');
+        const value = key.dataset.key;
+        if (value.length !== 1 || value === '⌫') return;
+        const stateValue = state.keyboardState[value.toLowerCase()];
+        if (stateValue) key.classList.add(stateValue);
+      });
+    }
+
+    function endGame(win) {
+      state.gameOver = true;
+      state.stats.played += 1;
+      if (win) {
+        state.stats.wins += 1;
+        state.stats.streak += 1;
+        state.stats.bestStreak = Math.max(state.stats.bestStreak, state.stats.streak);
+        state.stats.distribution[Math.max(0, state.currentRow)] += 1;
+        setMessage(`You got it in ${state.currentRow + 1}!`, 'success');
+      } else {
+        state.stats.streak = 0;
+        setMessage(`Out of guesses. The word was ${state.answer.toUpperCase()}.`, 'error');
+      }
+      saveGame();
+      saveStats();
+      renderStats();
+      setTimeout(() => openEndModal(win), 300);
+    }
+
+    function renderStats() {
+      const winRate = state.stats.played ? Math.round((state.stats.wins / state.stats.played) * 100) : 0;
+      statsEl.textContent = `Played: ${state.stats.played} · Wins: ${state.stats.wins} · Win rate: ${winRate}% · Streak: ${state.stats.streak} · Best streak: ${state.stats.bestStreak}`;
+    }
+
+    function openHowToModal() {
+      document.getElementById('modalTitle').textContent = 'How to Play';
+      modalBackdrop.querySelector('.modal p:nth-of-type(1)').textContent = 'Guess the hidden five-letter word in six tries.';
+      modalBackdrop.querySelector('.modal p:nth-of-type(2)').textContent = 'After each guess, the tiles flip to show how close you are.';
+      modalBackdrop.classList.add('show');
+    }
+
+    function openEndModal(win) {
+      document.getElementById('modalTitle').textContent = win ? 'You Bloomed!' : 'Round Over';
+      const p1 = modalBackdrop.querySelector('.modal p:nth-of-type(1)');
+      const p2 = modalBackdrop.querySelector('.modal p:nth-of-type(2)');
+      const p3 = modalBackdrop.querySelector('.modal p.small');
+      p1.textContent = win ? `Nice work — you solved ${state.answer.toUpperCase()}.` : `The answer was ${state.answer.toUpperCase()}.`;
+      p2.textContent = state.mode === 'daily' ? 'Come back tomorrow for the next daily word, or start a random puzzle right now.' : 'You can jump into another random puzzle any time.';
+      p3.textContent = `Played ${state.stats.played}, won ${state.stats.wins}, current streak ${state.stats.streak}, best streak ${state.stats.bestStreak}.`;
+      modalBackdrop.classList.add('show');
+    }
+
+    function closeModal() {
+      modalBackdrop.classList.remove('show');
+    }
+
+    document.addEventListener('keydown', (event) => {
+      const key = event.key;
+      if (modalBackdrop.classList.contains('show') && key === 'Escape') {
+        closeModal();
+        return;
+      }
+      if (/^[a-zA-Z]$/.test(key)) handleKey(key.toUpperCase());
+      else if (key === 'Backspace') handleKey('BACKSPACE');
+      else if (key === 'Enter') handleKey('ENTER');
+    });
+
+    howToBtn.addEventListener('click', openHowToModal);
+    closeModalBtn.addEventListener('click', closeModal);
+    modalBackdrop.addEventListener('click', (e) => { if (e.target === modalBackdrop) closeModal(); });
+    newRandomBtn.addEventListener('click', startRandomGame);
+
+    loadStats();
+    startDailyGame();
+  </script>
+</body>
+</html>

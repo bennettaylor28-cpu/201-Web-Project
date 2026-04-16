@@ -1,0 +1,101 @@
+/* PAGE BACKGROUND */
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background-color: #e6f2ff; /* light blue */
+  color: #1a1a1a;
+}
+
+/* HEADER */
+.header {
+  background-color: #4169e1; /* royal blue */
+  color: white;
+  text-align: center;
+  padding: 25px;
+}
+
+/* NAV BAR */
+.nav {
+  background-color: #dbe9ff;
+  text-align: center;
+  padding: 12px;
+  font-weight: bold;
+}
+
+.nav a {
+  color: #004080;
+  text-decoration: none;
+  margin: 0 12px;
+}
+
+.nav a:hover {
+  color: #2e8b57; /* green accent */
+  text-decoration: underline;
+}
+
+/* MAIN CONTAINER */
+.container {
+  width: 90%;
+  max-width: 900px;
+  margin: 20px auto;
+}
+
+/* CARD SECTIONS */
+.card {
+  background-color: white;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+}
+
+/* HEADERS */
+h1, h2 {
+  color: #4169e1;
+}
+
+/* STRONG TEXT */
+strong {
+  color: #004080;
+}
+
+/* LISTS */
+ul {
+  color: #2e8b57;
+}
+
+li {
+  margin-bottom: 6px;
+}
+
+/* MEDIA */
+img {
+  width: 100%;
+  border-radius: 10px;
+  border: 3px solid #4169e1;
+}
+
+iframe {
+  width: 100%;
+  height: 400px;
+  border: none;
+  border-radius: 10px;
+}
+
+/* FOOTER */
+.footer {
+  background-color: #4169e1;
+  color: white;
+  text-align: center;
+  padding: 15px;
+  margin-top: 20px;
+}
+
+.footer a {
+  color: white;
+  text-decoration: none;
+}
+
+.footer a:hover {
+  text-decoration: underline;
+}
